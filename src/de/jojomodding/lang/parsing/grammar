@@ -1,0 +1,24 @@
+ty = pty [ "->" ty ]
+pty = "int" | "bool" | "(" ty ")"
+
+exp =  "if" exp "then" exp "else" exp
+     | "fn" id ":" ty "=>" exp
+     | cexp exp'
+exp' = "||" cexp exp'
+cexp = xexp cexp'
+cexp' = "&&" xexp cexp'
+xexp = eqexp xexp'
+xexp' = "^" eqexp xexp'
+eqexp = rexp eqexp'
+eqexp' = ("=="|"!=") rexp eqexp'
+rexp = aexp rexp'
+rexp' = (">" | "<" | ">=" | "<=") aexp rexp'
+aexp = mexp aexp'
+aexp' = ("+" | "-") mexp aexp'
+mexp = uexp mexp'
+mexp' = ("*") uexp mexp'
+uexp = ("+"|"-"|"!") uexp | pexp
+pexp = id | con | "(" exp ")"
+
+con = num | "true" | "false"
+
