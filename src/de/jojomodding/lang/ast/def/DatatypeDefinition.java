@@ -7,6 +7,7 @@ import de.jojomodding.lang.value.AtomValue;
 import de.jojomodding.lang.value.ConstructorValue;
 import de.jojomodding.lang.value.Value;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DatatypeDefinition extends Definition{
@@ -22,13 +23,16 @@ public class DatatypeDefinition extends Definition{
     public List<String> elaborate(ElabEnvironment env) {
         Datatype dt = new Datatype(dtdef, tvs);
         QuantizedType dtt = new QuantizedType(tvs, dt);
+        List<String> pts = new ArrayList<>(dtdef.getAtoms().size() + dtdef.getConstrs().size());
         for(String s : dtdef.getAtoms()){
             env.setVariable(s, dtt);
+            pts.add(s);
         }
         for(Datatype.DatatypeDef.DatatypeConstr constr : dtdef.getConstrs()){
             env.setVariable(constr.getName(), constr.getQuantizedType());
+            pts.add(constr.getName());
         }
-        return List.of();
+        return pts;
     }
 
     @Override

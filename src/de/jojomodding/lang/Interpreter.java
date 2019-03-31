@@ -8,65 +8,81 @@ import de.jojomodding.lang.exception.*;
 import de.jojomodding.lang.parsing.CodePosition;
 import de.jojomodding.lang.parsing.Lexer;
 import de.jojomodding.lang.parsing.Parser;
+import de.jojomodding.lang.parsing.Token;
 import de.jojomodding.lang.type.Type;
 import de.jojomodding.lang.value.Value;
 
+import java.io.InputStream;
 import java.util.List;
 
 public class Interpreter {
 
-    private String code;
+    private Lexer l;
+    private Parser p;
+    private Environment<Value> evalEnv;
+    private ElabEnvironment elabEnv;
 
-    public Interpreter(String code){
-        this.code = code;
+    public Interpreter(InputStream source){
+        this.p = new Parser(this::executeDefinition, this::errorHandler);
+        this.evalEnv = new Environment<>();
+        this.elabEnv = p.getElabEnviron();
+        BasicTypes bt = new BasicTypes();
+        bt.initElab(elabEnv);
+        bt.initEval(evalEnv);
+        p.start();
+        this.l = new Lexer(source, this::accept);
     }
 
-    private StringBuilder buildError(StringBuilder sb, LangException e, List<String> lines){
-        e.printStackTrace();
+    public void run(){
+        try {
+            l.lex();
+        } catch (LexerException e) {
+            errorHandler(e);
+        }
+    }
+
+    private void errorHandler(Throwable error){
+        if(error instanceof LangException){
+            System.err.println(buildError((LangException) error, l.lines()));
+        }
+        error.printStackTrace();
+        System.exit(1);
+    }
+
+
+    private String buildError(LangException e, List<String> lines){
+        StringBuilder sb = new StringBuilder();
         try {
             sb.append(e.format()).append('\n');
             CodePosition cp = e.position();
             if(cp != null) {
                 String s = lines.get(cp.line());
                 sb.append(s).append('\n');
-                for(int i = 1; i < cp.posInLine(); i++)
+                for(int i = 1; i < cp.charInLine(); i++)
                     sb.append(' ');
                 sb.append('^');
             }
         }catch (IndexOutOfBoundsException ignore){
             //
         }
-        return sb;
-    }
-
-    public String run(){
-        Lexer lex = new Lexer(code);
-        StringBuilder sb = new StringBuilder();
-        try {
-            lex.lex();
-            Parser parser = new Parser(lex.getResult());
-            ElabEnvironment elabe = parser.getElabEnviron();
-            Environment<Value> evale = new Environment<>();
-            BasicTypes ee = new BasicTypes();
-            ee.initElab(elabe);
-            ee.initEval(evale);
-            List<Definition> prog = parser.parse();
-            for(Definition d : prog){
-                List<String> sl = d.elaborate(elabe);
-                d.evaluate(evale);
-                for(String s : sl){
-                    Type t = elabe.resolve(elabe.get(s));
-                    Value v = evale.get(s);
-                    sb.append(s).append(" = ").append(v).append(" : ").append(t.deparse(elabe)).append('\n');
-                }
-            }
-        }catch (LangException e) {
-            buildError(sb, e, lex.lines());
-        }catch (Throwable t){
-            t.printStackTrace();
-            sb.append("ERROR! ").append(t.toString());
-        }
         return sb.toString();
     }
 
+    private void executeDefinition(Definition def){
+        try {
+            List<String> strings = def.elaborate(elabEnv);
+            def.evaluate(this.evalEnv);
+            for(String s : strings){
+                Type t = elabEnv.get(s);
+                Value v = this.evalEnv.get(s);
+                System.out.println(s+" = "+v.toString()+" : "+elabEnv.resolve(t).deparse(elabEnv));
+            }
+        } catch (Throwable e) {
+            errorHandler(e);
+        }
+    }
+
+    private void accept(Token tokens) {
+        p.continueWith(tokens);
+    }
 }

@@ -82,11 +82,11 @@ public class Environment<T> {
     }
 
     public void validateDatatypeDef(Datatype.DatatypeDef def) throws IllegalArgumentException{
-        Optional<Map.Entry<String, Datatype.DatatypeDef>> o = def.getAtoms().stream().map(s -> isDatatypeAtom(s).map(d -> Map.entry(s,d))).flatMap(Optional::stream).findAny();
+        Optional<Map.Entry<String, Datatype.DatatypeDef>> o = def.getAtoms().stream().map(s -> isDatatypeAtom(s).map(d -> Map.entry(s,d))).flatMap(Optional::stream).filter(e->e.getValue() != def).findAny();
         if(o.isPresent()){
             throw new IllegalArgumentException("Datatype atom "+o.get().getKey()+" already registered with dt "+o.get().getValue().getName());
         }
-        Optional<Datatype.DatatypeDef.DatatypeConstr> oo = def.getConstrs().stream().map(Datatype.DatatypeDef.DatatypeConstr::getName).map(this::isDatatypeConstr).flatMap(Optional::stream).findAny();
+        Optional<Datatype.DatatypeDef.DatatypeConstr> oo = def.getConstrs().stream().map(Datatype.DatatypeDef.DatatypeConstr::getName).map(this::isDatatypeConstr).flatMap(Optional::stream).filter(e->e.getParent() != def).findAny();
         if(oo.isPresent()){
             throw new IllegalArgumentException("Datatype atom "+oo.get().getName()+" already registered with dt "+oo.get().getParent().getName());
         }

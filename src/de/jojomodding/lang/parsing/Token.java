@@ -11,7 +11,7 @@ public class Token {
         FN("fn"), COLON(":"), BIGARROW("=>"), IF("if"), THEN("then"), ELSE("else"),
         EQUAL("=="), UNEQUAL("!="), LESS("<"), GREATER(">"), LESSEQUAL("<="), GREATEREQUAL(">="),
         AND("&&"), OR("||"), XOR("^"), NOT("!"), PLUS("+"), MINUS("-"), STAR("*"), COMMA(","),
-        TRUE("true"), FALSE("false"),
+        TRUE("true"), FALSE("false"), SEMICOLON(";"),
         TYPE_INTEGER(null), TYPE_IDENT(null), TYPE_TVAR(null), TYPE_TVAR_EQ(null), TYPE_PROJ(null), EOF(null);
 
         private String rep;

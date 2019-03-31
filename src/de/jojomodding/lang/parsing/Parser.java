@@ -13,28 +13,34 @@ import de.jojomodding.lang.value.AtomValue;
 import de.jojomodding.lang.value.ConstantValue;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 import static de.jojomodding.lang.parsing.Token.Basic.*;
 import static de.jojomodding.lang.ast.expression.OperatorExpression.BinaryOperator;
 import static de.jojomodding.lang.ast.expression.OperatorExpression.UnaryOperator;
 
-public class Parser {
+public class Parser extends Thread{
 
-    private int tokenPosition;
-    private List<Token> tokens;
+    private List<Token> lastTokens = new LinkedList();
+    private ConcurrentLinkedQueue<Token> pendingTokens;
+    private Consumer<Throwable> exceptionHandler;
     private ElabEnvironment env;
+    private final Object sync = new Object();
+    private Consumer<Definition> def;
 
-    public Parser(List<Token> tokens){
-        this.tokens = tokens;
-        this.tokenPosition = 0;
-        env = new ElabEnvironment();
+    public Parser(Consumer<Definition> cont, Consumer<Throwable> error){
+        this.pendingTokens = new ConcurrentLinkedQueue<>();
+        this.env = new ElabEnvironment();
+        this.def = cont;
+        this.exceptionHandler = error;
     }
 
-    public List<Definition> parse() throws ParserException {
-        List<Definition> result = deflist(true);
-        if(tokenPosition != tokens.size())
-            throw new ParserException(current(), "Junk after end");
-        return result;
+    public void continueWith(Token t){
+        synchronized (sync){
+            pendingTokens.add(t);
+            sync.notifyAll();
+        }
     }
 
     public ElabEnvironment getElabEnviron(){
@@ -42,20 +48,20 @@ public class Parser {
     }
 
     private Token.Basic current_rep() throws ParserException {
-        try {
-            return tokens.get(tokenPosition).rep();
-        }catch (IndexOutOfBoundsException e){
-            return EOF;
-            //throw new ParserException(null, "Unexpected end of token stream");
-        }
+        return current().rep();
     }
 
     private Token current() throws ParserException {
-        try {
-            return tokens.get(tokenPosition);
-        }catch (IndexOutOfBoundsException e){
-            throw new ParserException(null, "Unexpected end of token stream");
+        while (pendingTokens.isEmpty()){
+            synchronized (sync){
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    continue;
+                }
+            }
         }
+        return pendingTokens.peek();
     }
 
     private Token next() throws ParserException {
@@ -64,7 +70,29 @@ public class Parser {
     }
 
     private void advance(){
-        tokenPosition++;
+        synchronized (sync) {
+            while (pendingTokens.isEmpty()) {
+                try {
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    continue;
+                }
+            }
+        }
+        lastTokens.add(pendingTokens.poll());
+    }
+
+    public void run(){
+        try{
+            while (true){
+                while (current_rep() == SEMICOLON)
+                    advance();
+                Definition def = def();
+                this.def.accept(def);
+            }
+        } catch (Throwable e) {
+            exceptionHandler.accept(e);
+        }
     }
 
     private PatternRow patrow() throws ParserException {
@@ -228,22 +256,6 @@ public class Parser {
         }
     }
 
-    private List<Definition> deflist(boolean b) throws ParserException {
-        List<Definition> ld = new LinkedList<>();
-        loop: while (true){
-            switch (current_rep()){
-                case FUN:
-                case VAL:
-                case DATATYPE:
-                    ld.add(def());
-                    if(b) env.newUservarScope();
-                    continue loop;
-                default: break loop;
-            }
-        }
-        return ld;
-    }
-
     private Definition def() throws ParserException{
         CodePosition cp = current().getPosition();
         Token ft = current();
@@ -391,7 +403,14 @@ public class Parser {
                     throw new ParserException(tok, e.getMessage());
                 }
                 return new DatatypeDefinition(dtdef, tvs);
-            default: throw new ParserException(current(), "Expected a definition");
+            default:
+                Token current = current();
+                try {
+                    Expression e = exp();
+                    return new ValueDefinition(new VariablePattern("it", env.newType()), e).at(e.position());
+                }catch (ParserException e) {
+                    throw new ParserException(current, "Expected a definition");
+                }
         }
     }
 
@@ -513,15 +532,27 @@ public class Parser {
                         return new ConditionalExpression(cond, tc, ec).at(cp);
                     }else throw new ParserException(current(), "expected \"else\"");
                 }else throw new ParserException(current(), "expected \"then\"");
-            default: return exp_(cexp());
+            default: return anexp();
         }
     }
 
-    private Expression exp_(Expression given) throws ParserException {
+    private Expression anexp() throws ParserException {
+        Expression p = oexp_(cexp());
+        switch (current_rep()){
+            case COLON:
+                advance();
+                Type t = ty();
+                return new TypeAnnotatedExpression(p, t).at(p.position());
+            default: return p;
+        }
+
+    }
+
+    private Expression oexp_(Expression given) throws ParserException {
         switch (current_rep()){
             case OR:
                 advance();
-                return exp_(new OperatorExpression(given, BinaryOperator.OR, exp()).at(given.position()));
+                return oexp_(new OperatorExpression(given, BinaryOperator.OR, exp()).at(given.position()));
             default:
                 return given;
         }

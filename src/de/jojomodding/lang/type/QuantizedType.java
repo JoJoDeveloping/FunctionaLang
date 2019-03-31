@@ -17,11 +17,13 @@ public class QuantizedType extends Type {
 
     @Override
     public String deparse(ElabEnvironment env, DeparseHelper dh) {
+        if(qv.isEmpty()) return t.deparse(env, dh);
         return "∀ "+qv.stream().map(t -> t.deparse(env, dh)).collect(Collectors.joining(", "))+": "+t.deparse(env, dh);
     }
 
     @Override
     public String toString() {
+        if(qv.isEmpty()) return t.toString();
         return "∀ "+qv.stream().map(TypeVariable::toString).collect(Collectors.joining(", "))+": "+t.toString();
     }
 
