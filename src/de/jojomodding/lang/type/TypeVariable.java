@@ -24,6 +24,10 @@ public class TypeVariable extends Type{
     @Override
     public String deparse(ElabEnvironment env, DeparseHelper dh) {
         String aname = dh.fromfirst.computeIfAbsent(name, s -> ElabEnvironment.format(new StringBuilder(), dh.i++).toString());
+        if(!dh.quantifiedVars.contains(this.name)){
+            aname = "~"+aname.toUpperCase();
+            env.markAsFree(this);
+        }
         return (env.hasEquality(this.name)?"''":"'")+aname;
     }
 

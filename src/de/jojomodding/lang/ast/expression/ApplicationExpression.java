@@ -27,13 +27,6 @@ public class ApplicationExpression extends Expression {
         env.forcetype(this, argType, gType);
         return resType;
     }
-    /*
-datatype 'a mu = Roll of ('a mu -> 'a)
-fun unroll (Roll x) = x
-fun fix f = (fn x => fn a => f (unroll x x) a) (Roll (fn x => fn a => f (unroll x x) a));
-fix (fn f => fn 0=>0|x => x+f(x-1));
-it 10;
-     */
 
     @Override
     public Value evaluate(Environment<Value> env) throws EvaluationException {

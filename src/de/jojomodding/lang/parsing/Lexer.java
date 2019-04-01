@@ -129,8 +129,8 @@ public class Lexer extends Thread{
                         continue;
                     case '\'':
                         char cc = code.read();
-                        if(cc=='\'') this.addToken(new Token.IDToken(lexID(code.read()), cp, Token.Basic.TYPE_TVAR_EQ));
-                        else this.addToken(new Token.IDToken(lexID(cc), cp, Token.Basic.TYPE_TVAR));
+                        if(cc=='\'') this.addToken(new Token.IDToken(lexTID(code.read()), cp, Token.Basic.TYPE_TVAR_EQ));
+                        else this.addToken(new Token.IDToken(lexTID(cc), cp, Token.Basic.TYPE_TVAR));
                         continue;
                     case '#':
                         BigInteger i = lexNum(code.read());
@@ -183,6 +183,18 @@ public class Lexer extends Thread{
                                 case "op":
                                     add(Token.Basic.OP, cp);
                                     continue;
+                                case "case":
+                                    add(Token.Basic.CASE, cp);
+                                    continue;
+                                case "let":
+                                    add(Token.Basic.LET, cp);
+                                    continue;
+                                case "in":
+                                    add(Token.Basic.IN, cp);
+                                    continue;
+                                case "end":
+                                    add(Token.Basic.END, cp);
+                                    continue;
                             }
                             this.addToken(new Token.IDToken(id, cp));
                             continue;
@@ -204,6 +216,20 @@ public class Lexer extends Thread{
         StringBuilder sb = new StringBuilder();
         sb.append(start);
         while(!code.isAtEOF() && isID(code.peek())){
+            sb.append(code.read());
+        }
+        return sb.toString();
+    }
+
+    private boolean isTVar(char c){
+        return c>='a' && c <= 'z';
+    }
+
+    private String lexTID(char start) throws IOException, LexerException {
+        StringBuilder sb = new StringBuilder();
+        if(!isTVar(start)) throw new LexerException(code.position(), "Type variable may only contain standart lowercase letters");
+        sb.append(start);
+        while(!code.isAtEOF() && isTVar(code.peek())){
             sb.append(code.read());
         }
         return sb.toString();

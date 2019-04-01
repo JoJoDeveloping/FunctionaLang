@@ -39,6 +39,6 @@ public class OperatorProc extends Value{
 
     @Override
     public String toString() {
-        return opb == null ? Objects.toString(opu) : opb.toString();
+        return "op"+(opb == null ? Objects.toString(opu) : opb.toString());
     }
 }

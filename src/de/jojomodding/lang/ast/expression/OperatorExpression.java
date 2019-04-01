@@ -19,11 +19,32 @@ import static de.jojomodding.lang.type.BaseType.*;
 public class OperatorExpression extends Expression{
 
     public enum BinaryOperator{
-        ADD, SUB, MUL, LESS, GREATER, LEQ, GEQ, EQUAL, UNEQUAL, AND, OR, XOR, CONS;
+        ADD("+"), SUB("-"), MUL("*"), LESS("<"), GREATER(">"), LEQ("<="), GEQ(">="), EQUAL("=="), UNEQUAL("!="), AND("&&"), OR("||"), XOR("^"), CONS("::");
+
+        private String rep;
+
+        public String toString(){
+            return rep;
+        }
+
+        BinaryOperator(String s){
+            this.rep = s;
+        }
     }
 
     public enum UnaryOperator{
-        NEG, NOT
+        NEG("--"), NOT("!");
+
+
+        private String rep;
+
+        public String toString(){
+            return rep;
+        }
+
+        UnaryOperator(String s){
+            this.rep = s;
+        }
     }
 
     private Expression e1, e2;

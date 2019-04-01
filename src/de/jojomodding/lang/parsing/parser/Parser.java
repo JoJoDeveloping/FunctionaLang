@@ -101,7 +101,7 @@ public class Parser extends Thread{
         }
     }
 
-    private Definition def() throws ParserException{
+    protected Definition def() throws ParserException{
         CodePosition cp = current().getPosition();
         Token ft = current();
         switch (current_rep()){

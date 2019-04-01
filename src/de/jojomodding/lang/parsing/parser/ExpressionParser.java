@@ -1,5 +1,6 @@
 package de.jojomodding.lang.parsing.parser;
 
+import de.jojomodding.lang.ast.def.Definition;
 import de.jojomodding.lang.ast.expression.*;
 import de.jojomodding.lang.ast.pattern.PatternRow;
 import de.jojomodding.lang.exception.ParserException;
@@ -9,6 +10,8 @@ import de.jojomodding.lang.type.Datatype;
 import de.jojomodding.lang.type.Type;
 import de.jojomodding.lang.value.AtomValue;
 
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,14 +30,13 @@ public class ExpressionParser extends ParserHelper<Expression> {
 
 
     private Expression exp() throws ParserException {
+        CodePosition cp = current().getPosition();
         switch (current_rep()){
             case FN:
-                CodePosition cp = current().getPosition();
                 advance();
                 PatternRow pr = this.p.patrow();
                 return new AbstractionExpression(pr).at(cp);
             case IF:
-                cp = current().getPosition();
                 advance();
                 Expression cond = exp();
                 if(current_rep() == THEN){
@@ -46,6 +48,34 @@ public class ExpressionParser extends ParserHelper<Expression> {
                         return new ConditionalExpression(cond, tc, ec).at(cp);
                     }else throw new ParserException(current(), "expected \"else\"");
                 }else throw new ParserException(current(), "expected \"then\"");
+            case CASE:
+                advance();
+                Expression e = exp();
+                if(current_rep() != OF) throw new ParserException(current(), "expected \"of\"");
+                advance();
+                return new CaseExpression(e, p.patrow()).at(cp);
+            case LET:
+                advance();
+                List<Definition> defs = new ArrayList<>();
+                loop: while (true){
+                    switch (current_rep()){
+                        case FUN:
+                        case VAL:
+                            defs.add(p.def());
+                            continue;
+                        case SEMICOLON:
+                            advance();
+                            continue loop;
+                        case IN:
+                            advance();
+                            break loop;
+                        default: throw new ParserException(current(), "Expected \"in\" or an function/value definition");
+                    }
+                }
+                e = exp();
+                if(current_rep() != END) throw new ParserException(current(), "Expected \"end\"");
+                advance();
+                return new LetInExpression(defs, e).at(cp);
             default: return anexp();
         }
     }
@@ -218,6 +248,7 @@ public class ExpressionParser extends ParserHelper<Expression> {
             case FALSE:
             case CLPAR:
             case LPAR:
+            case OP:
             case TYPE_INTEGER:
             case TYPE_IDENT:
                 return sexp_(new ApplicationExpression(given, pexp()).at(given.position()));

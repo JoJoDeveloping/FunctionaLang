@@ -15,6 +15,7 @@ public class ElabEnvironment extends Environment<Type> {
     private Set<String> requireEquality = new HashSet<String>();
     private Map<String, TypeVariable> userProvided = new HashMap<>();
     private HashSet<String> seen1 = new HashSet<>(), seen2 = new HashSet<>();
+    private Set<String> freeTLDTVars = new HashSet<>();
 
     public void forcetype(ASTElement me, Type t1, Type t2) throws ElaborationException {
         _forcetype(me, t1, t2);
@@ -309,11 +310,20 @@ public class ElabEnvironment extends Environment<Type> {
         env.userProvided = userProvided;
         env.types = types;
         env.dtdefs = dtdefs;
+        env.freeTLDTVars = freeTLDTVars;
         return env;
     }
 
 
     public TypeVariable translateUserProvidedVar(String tvar, boolean b) {
         return userProvided.computeIfAbsent(tvar, s->newType(b));
+    }
+
+    public void markAsFree(TypeVariable typeVariable) {
+        Type t = forcedTypes.get(typeVariable.getName());
+        if(t instanceof TypeVariable)
+            markAsFree(typeVariable);
+        else
+            freeTLDTVars.add(typeVariable.getName());
     }
 }
