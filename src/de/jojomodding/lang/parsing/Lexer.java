@@ -46,6 +46,9 @@ public class Lexer extends Thread{
                             add(Token.Basic.ARROW, cp);
                         }else add(Token.Basic.MINUS, cp);
                         continue;
+                    case '~':
+                        add(Token.Basic.TILDE, cp);
+                        continue;
                     case '(':
                         add(Token.Basic.LPAR, cp);
                         continue;

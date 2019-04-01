@@ -10,7 +10,7 @@ public class Token {
         VBAR("|"), WILDCARD("_"), AS("as"), CONS("::"), CLPAR("["), CRPAR("]"),
         FN("fn"), COLON(":"), BIGARROW("=>"), IF("if"), THEN("then"), ELSE("else"),
         EQUAL("=="), UNEQUAL("!="), LESS("<"), GREATER(">"), LESSEQUAL("<="), GREATEREQUAL(">="),
-        AND("&&"), OR("||"), XOR("^"), NOT("!"), PLUS("+"), MINUS("-"), STAR("*"), COMMA(","),
+        AND("&&"), OR("||"), XOR("^"), NOT("!"), PLUS("+"), MINUS("-"), TILDE("~"), STAR("*"), COMMA(","),
         TRUE("true"), FALSE("false"), SEMICOLON(";"), OP("op"),
         CASE("case"), LET("let"), IN("in"), END("end"),
         TYPE_INTEGER(null), TYPE_IDENT(null), TYPE_TVAR(null), TYPE_TVAR_EQ(null), TYPE_PROJ(null), EOF(null);

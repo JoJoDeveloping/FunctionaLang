@@ -17,6 +17,7 @@ public class QuantizedType extends Type {
 
     @Override
     public String deparse(ElabEnvironment env, DeparseHelper dh) {
+        qv.stream().map(TypeVariable::getName).forEach(dh.quantifiedVars::add);
         if(qv.isEmpty()) return t.deparse(env, dh);
         return "∀ "+qv.stream().map(t -> t.deparse(env, dh)).collect(Collectors.joining(", "))+": "+t.deparse(env, dh);
     }

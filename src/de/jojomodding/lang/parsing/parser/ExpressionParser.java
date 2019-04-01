@@ -216,6 +216,7 @@ public class ExpressionParser extends ParserHelper<Expression> {
                 advance();
                 return uexp();
             case MINUS:
+            case TILDE:
                 CodePosition cp = current().getPosition();
                 advance();
                 return new OperatorExpression(OperatorExpression.UnaryOperator.NEG, uexp()).at(cp);
@@ -315,10 +316,6 @@ public class ExpressionParser extends ParserHelper<Expression> {
                         return new OperatorFunctionExpression(OperatorExpression.BinaryOperator.ADD).at(current.getPosition());
                     case MINUS:
                         advance();
-                        if(current_rep() == MINUS){
-                            advance();
-                            return new OperatorFunctionExpression(OperatorExpression.UnaryOperator.NEG).at(current.getPosition());
-                        }
                         return new OperatorFunctionExpression(OperatorExpression.BinaryOperator.SUB).at(current.getPosition());
                     case STAR:
                         advance();
@@ -356,6 +353,9 @@ public class ExpressionParser extends ParserHelper<Expression> {
                     case NOT:
                         advance();
                         return new OperatorFunctionExpression(OperatorExpression.UnaryOperator.NOT).at(current.getPosition());
+                    case TILDE:
+                        advance();
+                        return new OperatorFunctionExpression(OperatorExpression.UnaryOperator.NEG).at(current.getPosition());
                     default:
                         throw new ParserException(current(), "Expected an operator");
                 }

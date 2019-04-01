@@ -55,9 +55,9 @@ public class ApplicationExpression extends Expression {
                 TupleValue tv = (TupleValue) x;
                 if(tv.entries().size() != 2) throw new EvaluationException(this, "Operator proc expects tuple with two entries");
                 return OperatorExpression.evaluate(this, op.getBinaryOperator(), () -> tv.entries().get(0), () -> tv.entries().get(1), env);
-            }else {
+            }else if(op.isUnaryOperator()){
                 return OperatorExpression.evaluate(this, op.getUnaryOperator(), () -> x, env);
-            }
+            }else throw new NullPointerException("opu and opb");
         }else
             throw new EvaluationException(this, "Unknown type of function value "+v.getClass().getName());
     }
