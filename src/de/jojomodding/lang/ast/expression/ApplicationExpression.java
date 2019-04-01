@@ -6,10 +6,7 @@ import de.jojomodding.lang.exception.ElaborationException;
 import de.jojomodding.lang.exception.EvaluationException;
 import de.jojomodding.lang.type.FunctionType;
 import de.jojomodding.lang.type.Type;
-import de.jojomodding.lang.value.ConstructorValue;
-import de.jojomodding.lang.value.DefinedFunctionValue;
-import de.jojomodding.lang.value.ProcValue;
-import de.jojomodding.lang.value.Value;
+import de.jojomodding.lang.value.*;
 
 public class ApplicationExpression extends Expression {
 
@@ -30,6 +27,13 @@ public class ApplicationExpression extends Expression {
         env.forcetype(this, argType, gType);
         return resType;
     }
+    /*
+datatype 'a mu = Roll of ('a mu -> 'a)
+fun unroll (Roll x) = x
+fun fix f = (fn x => fn a => f (unroll x x) a) (Roll (fn x => fn a => f (unroll x x) a));
+fix (fn f => fn 0=>0|x => x+f(x-1));
+it 10;
+     */
 
     @Override
     public Value evaluate(Environment<Value> env) throws EvaluationException {
@@ -37,7 +41,7 @@ public class ApplicationExpression extends Expression {
         if(v instanceof ProcValue){
             Value av = arg.evaluate(env);
             ProcValue pv = (ProcValue) v;
-            return pv.getBody().evaluate(env, av);
+            return pv.getBody().evaluate(pv.getEvaluationEnvironment(), av);
         }else if(v instanceof DefinedFunctionValue){
             DefinedFunctionValue dfv = (DefinedFunctionValue) v;
             Value x = arg.evaluate(env);
@@ -50,6 +54,17 @@ public class ApplicationExpression extends Expression {
             ConstructorValue cv = (ConstructorValue) v;
             if(cv.isApplied()) throw new EvaluationException(this, "Constructor value already applied!");
             return cv.apply(x);
+        }else if(v instanceof OperatorProc){
+            OperatorProc op = (OperatorProc) v;
+            Value x = arg.evaluate(env);
+            if(op.isBinaryOperator()){
+                if(!(x instanceof TupleValue)) throw new EvaluationException(this, "Operator proc expects tuple with two entries");
+                TupleValue tv = (TupleValue) x;
+                if(tv.entries().size() != 2) throw new EvaluationException(this, "Operator proc expects tuple with two entries");
+                return OperatorExpression.evaluate(this, op.getBinaryOperator(), () -> tv.entries().get(0), () -> tv.entries().get(1), env);
+            }else {
+                return OperatorExpression.evaluate(this, op.getUnaryOperator(), () -> x, env);
+            }
         }else
             throw new EvaluationException(this, "Unknown type of function value "+v.getClass().getName());
     }

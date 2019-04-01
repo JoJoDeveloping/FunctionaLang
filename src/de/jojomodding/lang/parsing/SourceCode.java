@@ -49,6 +49,6 @@ public class SourceCode {
     }
 
     public CodePosition position() {
-        return position;
+        return new CodePosition(position);
     }
 }

@@ -48,4 +48,5 @@ public class CodePosition {
     public int charInLine(){
         return charAt;
     }
+
 }

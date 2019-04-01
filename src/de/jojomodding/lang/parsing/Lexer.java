@@ -180,6 +180,9 @@ public class Lexer extends Thread{
                                 case "as":
                                     add(Token.Basic.AS, cp);
                                     continue;
+                                case "op":
+                                    add(Token.Basic.OP, cp);
+                                    continue;
                             }
                             this.addToken(new Token.IDToken(id, cp));
                             continue;
@@ -190,6 +193,8 @@ public class Lexer extends Thread{
                         throw new LexerException(cp, "Unknown char "+p1);
                 }
             }
+        }catch (EOFException e){
+            throw new LexerException(null, "Unexpected end of char stream");
         }catch (IOException e){
             throw new LexerException(null, "Unexpected error: "+e.getMessage());
         }

@@ -409,7 +409,7 @@ public class Parser extends Thread{
                     Expression e = exp();
                     return new ValueDefinition(new VariablePattern("it", env.newType()), e).at(e.position());
                 }catch (ParserException e) {
-                    throw new ParserException(current, "Expected a definition");
+                    throw e;
                 }
         }
     }
@@ -714,59 +714,112 @@ public class Parser extends Thread{
 
     private Expression pexp() throws ParserException {
         Token current = current();
-        if(current() instanceof Token.IDToken){
-            advance();
-            return new VariableExpression(((Token.IDToken) current).value()).at(current.getPosition());
-        }else if(current_rep() == LPAR){
-            advance();
-            if(current_rep() == RPAR){
+        switch (current_rep()){
+            case TYPE_IDENT:
                 advance();
-                return new TupleExpression(/*unit*/).at(current.getPosition());
-            }
-            else{
-                List<Expression> exprs = new LinkedList<>();
-                loop: while(true){
-                    exprs.add(exp());
-                    switch (current_rep()){
-                        case COMMA:
-                            advance();
-                            continue;
-                        case RPAR:
-                            advance();
-                            break loop;
-                    }
-                }
-                if(exprs.size() == 1) return exprs.get(0);
-                return new TupleExpression(exprs).at(current.getPosition());
-            }
-        }else if(current_rep() == CLPAR) {
-            advance();
-            Datatype.DatatypeDef.DatatypeConstr c = env.isDatatypeConstr("op::").get();
-            if(current_rep() == CRPAR){
+                return new VariableExpression(((Token.IDToken) current).value()).at(current.getPosition());
+            case LPAR:
                 advance();
-                return new ConstantExpression(new AtomValue(env.getDatatypeDef("list"), "nil"));
-            }
-            else{
-                List<Expression> exprs = new LinkedList<>();
-                loop: while(true){
-                    exprs.add(exp());
-                    switch (current_rep()){
-                        case COMMA:
-                            advance();
-                            continue;
-                        case CRPAR:
-                            advance();
-                            break loop;
-                    }
+                if(current_rep() == RPAR){
+                    advance();
+                    return new TupleExpression(/*unit*/).at(current.getPosition());
                 }
-                return new ListExpression(exprs).at(current.getPosition());
-            }
-        }else{
-            try {
-                return new ConstantExpression(con()).at(current.getPosition());
-            }catch (ParserException p){
-                throw new ParserException(p.getToken(), "Expected an expression");
-            }
+                else{
+                    List<Expression> exprs = new LinkedList<>();
+                    loop: while(true){
+                        exprs.add(exp());
+                        switch (current_rep()){
+                            case COMMA:
+                                advance();
+                                continue;
+                            case RPAR:
+                                advance();
+                                break loop;
+                        }
+                    }
+                    if(exprs.size() == 1) return exprs.get(0);
+                    return new TupleExpression(exprs).at(current.getPosition());
+                }
+            case CLPAR:
+                advance();
+                Datatype.DatatypeDef.DatatypeConstr c = env.isDatatypeConstr("op::").get();
+                if(current_rep() == CRPAR){
+                    advance();
+                    return new ConstantExpression(new AtomValue(env.getDatatypeDef("list"), "nil"));
+                }
+                else{
+                    List<Expression> exprs = new LinkedList<>();
+                    loop: while(true){
+                        exprs.add(exp());
+                        switch (current_rep()){
+                            case COMMA:
+                                advance();
+                                continue;
+                            case CRPAR:
+                                advance();
+                                break loop;
+                        }
+                    }
+                    return new ListExpression(exprs).at(current.getPosition());
+                }
+            case OP:
+                advance();
+                switch (current_rep()){
+                    case PLUS:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.ADD).at(current.getPosition());
+                    case MINUS:
+                        advance();
+                        if(current_rep() == MINUS){
+                            advance();
+                            return new OperatorFunctionExpression(UnaryOperator.NEG).at(current.getPosition());
+                        }
+                        return new OperatorFunctionExpression(BinaryOperator.SUB).at(current.getPosition());
+                    case STAR:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.MUL).at(current.getPosition());
+                    case EQUAL:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.EQUAL).at(current.getPosition());
+                    case UNEQUAL:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.UNEQUAL).at(current.getPosition());
+                    case LESS:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.LESS).at(current.getPosition());
+                    case LESSEQUAL:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.LEQ).at(current.getPosition());
+                    case GREATER:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.GREATER).at(current.getPosition());
+                    case GREATEREQUAL:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.GEQ).at(current.getPosition());
+                    case AND:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.AND).at(current.getPosition());
+                    case OR:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.OR).at(current.getPosition());
+                    case XOR:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.XOR).at(current.getPosition());
+                    case CONS:
+                        advance();
+                        return new OperatorFunctionExpression(BinaryOperator.CONS).at(current.getPosition());
+                    case NOT:
+                        advance();
+                        return new OperatorFunctionExpression(UnaryOperator.NOT).at(current.getPosition());
+                    default:
+                        throw new ParserException(current(), "Expected an operator");
+                }
+            default:
+                try {
+                    return new ConstantExpression(con()).at(current.getPosition());
+                }catch (ParserException p){
+                    throw new ParserException(p.getToken(), "Expected an expression");
+                }
         }
     }
 
