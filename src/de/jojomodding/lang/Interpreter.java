@@ -7,7 +7,7 @@ import de.jojomodding.lang.env.Environment;
 import de.jojomodding.lang.exception.*;
 import de.jojomodding.lang.parsing.CodePosition;
 import de.jojomodding.lang.parsing.Lexer;
-import de.jojomodding.lang.parsing.Parser;
+import de.jojomodding.lang.parsing.parser.Parser;
 import de.jojomodding.lang.parsing.Token;
 import de.jojomodding.lang.type.Type;
 import de.jojomodding.lang.value.Value;
