@@ -9,6 +9,7 @@ A functional language that is mostly inspired by SML, although there are a few d
 - No datatype definitions in let-in expressions, so we don't open that can of worms.
 
 ## Example program:
+Courtesy of [Rosetta code's SML Y combinator](https://rosettacode.org/wiki/Y_combinator#Standard_ML)
 ```
 datatype 'a mu = Roll of ('a mu -> 'a)
 fun unroll (Roll x) = x;
